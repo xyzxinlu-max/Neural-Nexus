@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       
       if (!tab.url || !tab.url.startsWith('https://www.notion.so/')) {
         scanToggle.checked = !isScanning;
-        showStatus('请在 Notion 页面中操作', 'error');
+        showStatus('Please operate on a Notion page', 'error');
         return;
       }
 
@@ -58,12 +58,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         updateScanStatus(isScanning);
-        showStatus(isScanning ? '扫描已开启' : '扫描已关闭，数据已保存', 'success');
+        showStatus(isScanning ? 'Scanning enabled' : 'Scanning disabled, data saved', 'success');
       }
     } catch (error) {
       console.error('Error:', error);
       scanToggle.checked = !isScanning;
-      showStatus('错误: ' + error.message, 'error');
+      showStatus('Error: ' + error.message, 'error');
     }
   });
 
@@ -73,14 +73,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       
       if (!tab.url || !tab.url.startsWith('https://www.notion.so/')) {
-        showStatus('请在 Notion 页面中操作', 'error');
+        showStatus('Please operate on a Notion page', 'error');
         return;
       }
 
       // Get scan data
       const scanData = await chrome.storage.local.get(['scanData']);
       if (!scanData.scanData || Object.keys(scanData.scanData.pages || {}).length === 0) {
-        showStatus('没有扫描数据，请先开启扫描', 'error');
+        showStatus('No scan data available. Please enable scanning first', 'error');
         return;
       }
 
@@ -97,21 +97,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       
       if (response && response.success) {
-        showStatus('星图已显示', 'success');
+        showStatus('Star map displayed', 'success');
       }
     } catch (error) {
       console.error('Error:', error);
-      showStatus('错误: ' + error.message, 'error');
+      showStatus('Error: ' + error.message, 'error');
     }
   });
 
   // Update scan status display
   function updateScanStatus(isScanning) {
     if (isScanning) {
-      scanStatus.textContent = '扫描中... 请浏览需要记录的页面';
+      scanStatus.textContent = 'Scanning... Please browse pages to record';
       scanStatus.style.color = '#007AFF';
     } else {
-      scanStatus.textContent = '扫描已关闭';
+      scanStatus.textContent = 'Scanning Off';
       scanStatus.style.color = '#666';
     }
     scanCount.style.display = isScanning ? 'block' : 'none';
