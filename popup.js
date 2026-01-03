@@ -8,11 +8,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const scanCount = document.getElementById('scanCount');
   const pageCount = document.getElementById('pageCount');
   const linkCount = document.getElementById('linkCount');
-  const autoBrowseToggle = document.getElementById('autoBrowseToggle');
-  const autoBrowseStatus = document.getElementById('autoBrowseStatus');
-  const autoBrowseProgress = document.getElementById('autoBrowseProgress');
-  const currentPage = document.getElementById('currentPage');
-  const totalPages = document.getElementById('totalPages');
 
   // Load scan state
   const scanState = await chrome.storage.local.get(['scanning', 'scanData']);
@@ -130,83 +125,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     pageCount.textContent = Object.keys(pages).length;
     linkCount.textContent = links.length;
   }
-
-  // Auto-browse toggle handler
-  autoBrowseToggle.addEventListener('change', async (e) => {
-    const isAutoBrowsing = e.target.checked;
-    
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      
-      if (!tab.url || !tab.url.startsWith('https://www.notion.so/')) {
-        autoBrowseToggle.checked = !isAutoBrowsing;
-        showStatus('请在 Notion 页面中操作', 'error');
-        return;
-      }
-
-      // Send message to content script
-      const response = await chrome.tabs.sendMessage(tab.id, { 
-        action: isAutoBrowsing ? 'startAutoBrowse' : 'stopAutoBrowse' 
-      }).catch(async (error) => {
-        if (error.message && error.message.includes('Could not establish connection')) {
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-          });
-          return await chrome.tabs.sendMessage(tab.id, { 
-            action: isAutoBrowsing ? 'startAutoBrowse' : 'stopAutoBrowse' 
-          });
-        }
-        throw error;
-      });
-
-      if (response && response.success) {
-        await chrome.storage.local.set({ autoBrowsing: isAutoBrowsing });
-        updateAutoBrowseStatus(isAutoBrowsing);
-        showStatus(isAutoBrowsing ? '自动浏览已开启' : '自动浏览已关闭', 'success');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      autoBrowseToggle.checked = !isAutoBrowsing;
-      showStatus('错误: ' + error.message, 'error');
-    }
-  });
-
-  // Load auto-browse state
-  const autoBrowseState = await chrome.storage.local.get(['autoBrowsing']);
-  if (autoBrowseState.autoBrowsing) {
-    autoBrowseToggle.checked = true;
-    updateAutoBrowseStatus(true);
-  }
-
-  // Update auto-browse status display
-  function updateAutoBrowseStatus(isAutoBrowsing) {
-    if (isAutoBrowsing) {
-      autoBrowseStatus.textContent = '自动浏览中...';
-      autoBrowseStatus.style.color = '#007AFF';
-      autoBrowseProgress.style.display = 'block';
-    } else {
-      autoBrowseStatus.textContent = '自动浏览已关闭';
-      autoBrowseStatus.style.color = '#666';
-      autoBrowseProgress.style.display = 'none';
-    }
-  }
-
-  // Listen for auto-browse progress updates
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'local') {
-      if (changes.scanData) {
-        updateCounts(changes.scanData.newValue);
-      }
-      if (changes.autoBrowseProgress) {
-        const progress = changes.autoBrowseProgress.newValue;
-        if (progress) {
-          currentPage.textContent = progress.current || '-';
-          totalPages.textContent = progress.total || '-';
-        }
-      }
-    }
-  });
 
   // Listen for scan data updates
   chrome.storage.onChanged.addListener((changes, areaName) => {
